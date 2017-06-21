@@ -189,23 +189,37 @@ fun officiate_challenge (cs: card list, ds: move list, goal) =
        aux(cs, ds, [])
     end
 
-(*
+
+(* generate moves *)
+(* you can halt or draw or discard *)
 fun careful_player (cs: card list, goal) =
   let
-    fun aux (cs, accu) =
+    fun tryDisAndDraw (cs: card list, (s, r)) = 
+        let
+	    val sum = sum_cards((s,r)::cs)
+	in
+	    (*bestCardToDiscard(sum-goal)*)
+	    NONE
+	end
+    fun aux (cs, accu_hs, accu_ds) =
       case cs of 
-        [] => accu
-      | (s, r)::cs' =>
+        [] => accu_ds
+      | c::cs' =>
           let 
-	     val sum = sum_cards(accu)
+	     val sum = sum_cards(accu_hs)
 	  in
-	     if sum = goal then accu
-	     else if goal-sum > 10 then aux(cs', Draw::accu)
-	     else  peek 
-	         case tryRep(accu
+	     if sum = goal then accu_ds
+	     else if goal-sum > 10 then aux(cs', c::accu_hs, Draw::accu_ds)
+	     else (* peek  *)
+	         if goal-sum >= card_value(c) then aux(cs', c::accu_hs, Draw::accu_ds)
+		 else 
+		   case tryDisAndDraw(accu_hs, c) of
+		      NONE => accu_ds
+		      | SOME c2 => aux(cs', c::remove_card(accu_hs, c2, IllegalMove), Draw::((Discard c2)::accu_ds))
+
+		   
 	  end
   in
-     aux(cs, [])
+     aux(cs, [], [])
   end
 
-*)
